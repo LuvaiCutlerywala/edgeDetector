@@ -38,11 +38,13 @@ void denoiser::denoise(Mat img, Mat output)
         }
     }
 
-    for(int i = 1; i < img.rows - 1; ++i)
+    Mat buffered_img = add_buffer_zone(img);
+
+    for(int i = 1; i < buffered_img.rows - 1; ++i)
     {
-        for(int j = 1; j < img.cols - 1; ++j)
+        for(int j = 1; j < buffered_img.cols - 1; ++j)
         {
-            output.at<Vec3b>(i - 1, j - 1) = normalise(convolve_matrices(extract_sample_matrix(img, i, j), filter), filter_sum);
+            output.at<Vec3b>(i - 1, j - 1) = normalise(convolve_matrices(extract_sample_matrix(buffered_img, i, j), filter), filter_sum);
         }
     }
 }
@@ -86,4 +88,39 @@ Vec3b denoiser::normalise(Vec3b img, double normalisation_factor)
     }
 
     return out;
+}
+
+Mat denoiser::add_buffer_zone(Mat img)
+{
+    Mat buffered_img(img.rows + 2, img.cols + 2, CV_8UC3);
+    
+    int l = 0;
+    for(int i = 1; i < buffered_img.rows - 1; ++i)
+    {
+        for(int j = 0; j < buffered_img.cols; ++j)
+        {
+            if(j == 1)
+            {
+                l = 0;
+            } else if(j == img.rows)
+            {
+                l = img.rows - 1;
+            }
+
+            buffered_img.at<Vec3b>(i, j) = img.at<Vec3b>(i - 1, l);
+            l++;
+        }
+    }
+
+    for(int j = 0; j < buffered_img.cols; ++j)
+    {
+        buffered_img.at<Vec3b>(0, j) = buffered_img.at<Vec3b>(1, j);
+    }
+
+    for(int j = 0; j < buffered_img.cols; ++j)
+    {
+        buffered_img.at<Vec3b>(buffered_img.rows - 1, j) = buffered_img.at<Vec3b>(buffered_img.rows - 2, j);
+    }
+
+    return buffered_img;
 }
