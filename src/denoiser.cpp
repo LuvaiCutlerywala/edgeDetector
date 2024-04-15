@@ -1,4 +1,5 @@
 #include "../include/denoiser.hpp"
+#include "../include/img_utils.hpp"
 
 #include <cmath>
 #include <cassert>
@@ -44,39 +45,14 @@ void denoiser::denoise(Mat img, Mat output)
     {
         for(int j = 1; j < buffered_img.cols - 1; ++j)
         {
-            output.at<Vec3b>(i - 1, j - 1) = normalise(convolve_matrices(extract_sample_matrix(buffered_img, i, j), filter), filter_sum);
+            output.at<Vec3b>(i - 1, j - 1) = normalise(
+                img_utils::convolve_matrices<Vec3b, double>(
+                    img_utils::extract_sample_matrix(buffered_img, i, j),
+                    filter),
+                filter_sum
+            );
         }
     }
-}
-
-Mat denoiser::extract_sample_matrix(Mat img, int x, int y)
-{
-    Mat sample(3, 3, CV_8UC3);
-    for(int i = 0; i < 3; ++i)
-    {
-        for(int j = 0; j < 3; ++j)
-        {
-            sample.at<Vec3b>(i, j) = img.at<Vec3b>(x - 1 + i, y - 1 + j);
-        }
-    }
-
-    return sample;
-}
-
-Vec3b denoiser::convolve_matrices(Mat sample, Mat filter)
-{
-    assert((sample.rows == filter.rows) && (sample.cols == filter.cols));
-    
-    Vec3b total = 0;
-    for(int i = 0; i < sample.rows; ++i)
-    {
-        for(int j = 0; j < sample.cols; ++j)
-        {
-            total += sample.at<Vec3b>(i, j) * filter.at<double>(i, j);
-        }
-    }
-
-    return total;
 }
 
 Vec3b denoiser::normalise(Vec3b img, double normalisation_factor)

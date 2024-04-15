@@ -9,7 +9,5 @@ class processor
 {
     public:
         static Mat calculateIntensityGradient(Mat img);
-        
 };
-
 #endif
